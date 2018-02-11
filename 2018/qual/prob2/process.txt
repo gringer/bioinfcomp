@@ -1,0 +1,8 @@
+grep -n '^[0-9]' input_test3.txt | tail -n +2 | perl -pe 's/:/ /' > test3_lineNums.txt
+a=0; cat test3_lineNums.txt | while read start len; do a=$((a+1)); mkdir -p test3_${a}; echo ${a}; tail -n +$((${start}+1)) input_test3.txt | head -n ${len} | perl -pe 'tr/U/T/' | awk '{z+=1;print ">"z"\n"$0}' > test3_${a}/reads.fa; tail -n +$((${start}-1)) input_test3.txt | head -n 1 | perl -pe 'tr/U/T/' | awk '{print ">genome\n"$0}' > test3_${a}/genome.fa;  done
+
+bowtie2 -a -L 31 --no-unal -x genome.fa -f -U reads.fa | samtools sort | samtools view | awk '{print $4,$4 + length($10) - 1}' | uniq > intervals.txt
+
+for x in $(seq 1 25); do cd test3_${x}; bowtie2-build genome.fa genome.fa; bowtie2 -a -L 31 --no-unal -x genome.fa -f -U reads.fa | samtools sort | samtools view | awk '{print $4,$4 + length($10) - 1}' | uniq > intervals.txt; (echo "1"; grep -v '^>' genome.fa | perl -pe 'tr/T/U/'; cat intervals.txt | wc -l; cat intervals.txt) > input.txt; cd ..; done
+
+a=0; cat test2_lineNums.txt | while read start len; do a=$((a+1)); mkdir -p test2_$(printf '%02d' ${a}); echo ${a}; (echo 1; tail -n +$((${start}-1)) input_test2.txt | head -n $((${len}+2))) > test2_$(printf '%02d' ${a})/input.txt; done
